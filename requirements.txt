@@ -1,0 +1,10 @@
+pyarrow
+pandas
+numpy
+cupy
+xgboost
+lightgbm
+scikit-learn
+torch
+optuna
+matplotlib

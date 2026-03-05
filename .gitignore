@@ -1,0 +1,69 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Jupyter Notebook checkpoints
+.ipynb_checkpoints/
+
+# IDE and editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+.DS_Store
+.trae/
+
+# Conda environment
+# (建议不要提交环境文件，而是用 environment.yml)
+env/
+venv/
+*/env/
+*/venv/
+
+# Local configuration & secrets
+config/
+*.yaml
+*.yml
+*.ini
+*.env
+secrets/
+credentials/
+*.pem
+*.key
+
+# Data files (you typically don't want to commit raw or large data)
+data/
+raw/
+processed/
+*.csv
+*.parquet
+*.feather
+*.h5
+*.hdf5
+*.pickle
+*.pkl
+*.html
+
+# Logs and outputs
+logs/
+output/
+results/
+*.log
+
+# Compiled binaries or temporary files
+*.so
+*.dll
+*.exe
+build/
+dist/
+*.egg-info/
+
+# OS generated files
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+
+# Backup files
+*~
+*.bak
