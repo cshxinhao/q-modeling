@@ -73,11 +73,21 @@ def build_labels(
     """
     if market_df.empty:
         return pd.DataFrame()
-    
+
     # Detect limit up/down, mask it with NaN according to buy/sell action
 
     # Calculate forward returns
-    forward_returns = calc_forward_returns(market_df, market_df, [int(h[:-1]) for h in horizons], adjust=adjust)
+    buy_price = market_df["vwap"].unstack()
+    sell_price = market_df["vwap"].unstack()
+    forward_returns = pd.concat(
+        [
+            calc_forward_returns(
+                buy_price, sell_price, int(horizon[:-1]), adjust=adjust
+            )
+            for horizon in horizons
+        ],
+        axis=1,
+    )
 
     # Preprocess forward returns and build labels
     q1 = forward_returns.groupby("datetime").transform("quantile", q=0.25)

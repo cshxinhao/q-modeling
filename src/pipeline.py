@@ -57,12 +57,31 @@ def simple_pipeline(
 
     # Load the raw data
     raw_data_loader = RawDataLoader(train_start, train_end)
-    raw_data = raw_data_loader.load_fields(
+    market_data = raw_data_loader.load_fields(
         ["close", "vwap", "volume", "amount", "cap_ff"]
     )
 
     # Build labels
+    labels = build_labels(market_data)
 
+    # Train the model
+    X = features
+    y = labels["5d"].dropna()
+    X, y = X.align(y, join="inner", axis=0)
+    params = {
+        "n_estimators": 5800,
+        "max_depth": 8,
+        "learning_rate": 0.0001,
+        "min_child_weight": 8,
+        "subsample": 0.8,
+        "colsample_bytree": 0.8,
+        "alpha": 0.0,
+        "lambda": 1.0,
+        "gamma": 0.0,
+        "device": "cuda",
+    }
+    model_5d = train_model(X, y, params)
+    
     # --------------------------------------------------------------------------------
     # Predicting
 
