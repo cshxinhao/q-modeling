@@ -77,7 +77,8 @@ class FeatureDiscretizer:
     def binarize_features(threshold: float = 0.0):
         pass
 
-    def cluster_features():
+    def cluster_features(mode: str):
+        assert mode in ["kmeans", "hierarchical"], "Invalid clustering mode."
         pass
 
     def tree_split_features():
@@ -98,7 +99,7 @@ class FeatureDiscretizer:
 
 
 class FeatureDimensionReducer:
-    def select_features():
+    def select_features(df: pd.DataFrame):
         pass
 
     def orthogonalize_features():
@@ -106,5 +107,59 @@ class FeatureDimensionReducer:
 
 
 class FeatureDeriver:
-    def derive_feature_interactions():
-        pass
+
+    def derive_rolling(
+        df: pd.DataFrame, feature: str, window_size: int, calc_func: str
+    ):
+
+        assert feature in df.columns, "Feature not found in DataFrame."
+        assert calc_func in [
+            "mean",
+            "std",
+            "min",
+            "max",
+            "sum",
+        ], "Invalid calculation function."
+
+        df[f"{feature} {calc_func} {window_size}"] = (
+            df.groupby("symbol")[feature]
+            .rolling(window_size)
+            .agg(calc_func)
+            .reset_index(level=0, drop=True)
+        )
+
+    def derive_feature_interactions(
+        df: pd.DataFrame,
+        operation: str,
+        feature1: str,
+        feature2: str,
+    ):
+        """
+        Derive feature interactions for 2 features.
+        """
+        assert feature1 in df.columns, "Feature1 not found in DataFrame."
+        assert feature2 in df.columns, "Feature2 not found in DataFrame."
+
+        assert operation in [
+            "add",
+            "sub",
+            "mul",
+            "div",
+            "min",
+            "max",
+        ], "Invalid operation."
+
+        if operation == "add":
+            df[feature1 + " + " + feature2] = df[feature1] + df[feature2]
+        elif operation == "sub":
+            df[feature1 + " - " + feature2] = df[feature1] - df[feature2]
+        elif operation == "mul":
+            df[feature1 + " * " + feature2] = df[feature1] * df[feature2]
+        elif operation == "div":
+            df[feature1 + " / " + feature2] = df[feature1] / df[feature2]
+        elif operation == "min":
+            df[feature1 + " min " + feature2] = df[[feature1, feature2]].min(axis=1)
+        elif operation == "max":
+            df[feature1 + " max " + feature2] = df[[feature1, feature2]].max(axis=1)
+
+        return df

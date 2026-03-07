@@ -19,11 +19,20 @@ from src.feature import (
     FeatureDeriver,
 )
 from src.label import build_labels
-from src.model import train_model, save_model, load_model, predict
+from src.model import (
+    model_id,
+    model_files,
+    train_model,
+    save_model,
+    load_model,
+    predict,
+)
 from src.evaluator import Evaluator
 from src.logger import setup_logger
 
 logger = setup_logger(__name__, level=logging.DEBUG)
+
+MODEL_SAVE_DIR = "./model_files"
 
 
 def simple_pipeline(
@@ -32,6 +41,11 @@ def simple_pipeline(
     test_start: pd.Timestamp,
     test_end: pd.Timestamp,
 ):
+
+    model_id = model_id(train_start, train_end, "5d", params)
+    model_path, meta_path, pred_path, pool_path = model_files(
+        train_start, train_end, "5d", params, MODEL_SAVE_DIR
+    )
 
     # --------------------------------------------------------------------------------
     # Training
@@ -81,10 +95,25 @@ def simple_pipeline(
         "device": "cuda",
     }
     model_5d = train_model(X, y, params)
-    
+
+    # Save model
+    save_model(model_5d, model_path)
+
     # --------------------------------------------------------------------------------
     # Predicting
 
+    # Load model
+    model = load_model(model_path)
+
+    # Load features
+    feature_loader = FeatureLoader(test_start, test_end)
+    features = feature_loader.load_features(model.select_features)
+    # Normalize features
+    features = FeatureCleaner.normalize_features(features)
+
+    # Predict
+    pred = predict(model, features)
+    pred.to_frame().to_parquet(pred_path)
 
 def cv_pipeline():
     pass
