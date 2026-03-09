@@ -81,7 +81,7 @@ def simple_pipeline(
         "device": "cuda",
     }
     model_5d = train_model(X, y, params)
-    
+
     # --------------------------------------------------------------------------------
     # Predicting
 
