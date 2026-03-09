@@ -5,9 +5,76 @@ import cupy as cp
 from joblib import load, dump
 from pathlib import Path
 import pandas as pd
+import numpy as np
+import hashlib
+from datetime import datetime
+
 
 # Model
 from xgboost import XGBRegressor
+
+
+# ---------------------------------------------------
+# Model Meta
+# ---------------------------------------------------
+
+
+def model_id(
+    train_start: str,
+    train_end: str,
+    label: str,
+    model_params: dict,
+):
+    base = f"{label}_{train_start}_{train_end}"
+    h = hashlib.sha1(json.dumps(model_params, sort_keys=True).encode()).hexdigest()[:8]
+    return f"{base}_{h}"
+
+
+def model_files(
+    train_start: str,
+    train_end: str,
+    label: str,
+    model_params: dict,
+    save_dir: str,
+):
+    mid = model_id(train_start, train_end, label, model_params)
+    model_dir = Path(save_dir)
+    joblib_path = model_dir / f"model_{mid}.joblib"
+    meta_path = model_dir / f"model_{mid}.meta.json"
+    pred_path = model_dir / f"pred_{mid}.parquet"
+    pool_path = model_dir / f"stock_pool_{mid}.parquet"
+    return joblib_path, meta_path, pred_path, pool_path
+
+
+def _save_meta(
+    meta_path: Path,
+    cfg: dict,
+    n_samples: int,
+    n_features: int,
+    selected_features: list[str],
+):
+    try:
+        import importlib.metadata as md
+
+        versions = {}
+        for p in ["xgboost", "pandas", "numpy", "streamlit"]:
+            try:
+                versions[p] = md.version(p)
+            except Exception:
+                versions[p] = None
+    except Exception:
+        versions = {}
+    payload = {
+        "cfg": cfg,
+        "trained_at": datetime.now().isoformat(),
+        "n_samples": n_samples,
+        "n_features": n_features,
+        "selected_features": list(selected_features),
+        "versions": versions,
+    }
+    meta_path.parent.mkdir(parents=True, exist_ok=True)
+    with open(meta_path, "w", encoding="utf-8") as f:
+        json.dump(payload, f, ensure_ascii=False, indent=2)
 
 
 class ModelMetaManager:
@@ -18,7 +85,8 @@ class ModelMetaManager:
     def _init_db(self):
         conn = sqlite3.connect(self.db_path)
         cursor = conn.cursor()
-        cursor.execute("""
+        cursor.execute(
+            """
             CREATE TABLE IF NOT EXISTS model_meta (
                 model_id TEXT PRIMARY KEY,
                 model_type TEXT NOT NULL,
@@ -27,7 +95,8 @@ class ModelMetaManager:
                 feature_config TEXT NOT NULL,
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             )
-        """)
+        """
+        )
         conn.commit()
         conn.close()
 
@@ -87,6 +156,11 @@ class ModelMetaManager:
         df = pd.read_sql_query("SELECT * FROM model_meta", conn)
         conn.close()
         return df
+
+
+# ---------------------------------------------------
+# Training Utils
+# ---------------------------------------------------
 
 
 def train_model(X: pd.DataFrame, y: pd.Series, params: dict):

@@ -1,10 +1,11 @@
 pyarrow
 pandas
 numpy
-cupy
+# cupy
+matplotlib
+joblib
 xgboost
 lightgbm
 scikit-learn
 torch
 optuna
-matplotlib
