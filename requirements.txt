@@ -2,7 +2,7 @@ dotenv  # For loading environment variables
 pyarrow
 pandas
 numpy
-# cupy
+# cupy  # No need for xgboost cuda now
 matplotlib
 joblib
 xgboost

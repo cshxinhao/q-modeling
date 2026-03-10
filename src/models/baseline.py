@@ -15,10 +15,6 @@ from src.interface import ModelInterface
 
 
 logger = setup_logger(__name__)
-try:
-    import cupy as cp
-except ImportError:
-    logger.warning("cupy is not installed, will not use gpu")
 
 
 class BaselineRegModel(ModelInterface):
@@ -145,7 +141,7 @@ class BaselineRegModel(ModelInterface):
         upper = q3 + 3 * iqr
         is_outliers = (forward_returns < lower) | (forward_returns > upper)
         forward_returns = forward_returns.where(~is_outliers)
-        forward_returns = forward_returns
+        forward_returns = forward_returns.dropna()
 
         # Calculate labels - normalise
         mu = forward_returns.groupby("datetime").transform("mean")
@@ -183,11 +179,6 @@ class BaselineRegModel(ModelInterface):
         X, y = X.align(y, join="inner", axis=0)
         model = self._get_model()
 
-        # Migrate to gpu
-        if self.cupy:
-            X = cp.asarray(X)
-            y = cp.asarray(y)
-
         model.fit(X, y)
         self.fitted = True
 
@@ -224,10 +215,6 @@ class BaselineRegModel(ModelInterface):
         selected_features = meta["selected_features"]
         X = self._get_X(start=self.test_start, end=self.test_end)[selected_features]
         idx, cols = X.index, X.columns
-
-        # Migrate to gpu
-        if self.cupy:
-            X = cp.asarray(X)
 
         y_pred = model.predict(X)
 

@@ -1,3 +1,4 @@
+from pathlib import Path
 from src.models.baseline import BaselineRegModel
 from src.scheduler import simple_window_scheduler
 from src.settings import MODEL_SAVE_DIR
@@ -21,10 +22,10 @@ if __name__ == "__main__":
         "alpha": 0.0,
         "lambda": 1.0,
         "gamma": 0.0,
-        # "device": "cuda",
+        "device": "cuda",
     }
     LABEL_HORIZON = 5
-    MODEL_SAVE_DIR = MODEL_SAVE_DIR / "xgb5d_20260310"
+    MODEL_SAVE_DIR = Path(MODEL_SAVE_DIR) / "baseline_xgb5d"
 
     model = BaselineRegModel(
         base_model_name=BASE_MODEL_NAME,
