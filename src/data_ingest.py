@@ -1,22 +1,19 @@
-import os
-from dotenv import load_dotenv
 import pandas as pd
 import pyarrow.parquet as pq
 import warnings
 from pathlib import Path
-from src.logger import setup_logger
 import logging
+from src.logger import setup_logger
+from src.settings import RAW_DATA_DIR, FEATURE_DATA_DIR
 
 logger = setup_logger(__name__, level=logging.DEBUG)
-# Load the .env
-load_dotenv()
 
 
 class RawDataLoader:
     def __init__(self, start: pd.Timestamp, end: pd.Timestamp):
         self.start = start
         self.end = end
-        self.directory = Path(os.getenv("RAW_DATA_DIR"))
+        self.directory = Path(RAW_DATA_DIR)
 
     def load_fields(self, fields: list[str] = None) -> pd.DataFrame:
         filters = [
@@ -46,7 +43,7 @@ class FeatureLoader:
     def __init__(self, start: pd.Timestamp, end: pd.Timestamp):
         self.start = start
         self.end = end
-        self.directory = Path(os.getenv("FEATURE_DATA_DIR"))
+        self.directory = Path(FEATURE_DATA_DIR)
         self._find_name_to_filename()
 
     def _find_name_to_filename(self):

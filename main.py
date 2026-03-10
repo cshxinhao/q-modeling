@@ -1,10 +1,6 @@
-import os
-from dotenv import load_dotenv
 from src.models.baseline import BaselineRegModel
 from src.scheduler import simple_window_scheduler
-
-
-load_dotenv()
+from src.settings import MODEL_SAVE_DIR
 
 if __name__ == "__main__":
     # TODO: Sample Config, needs to be formatted in config file in a more elegant way
@@ -28,7 +24,7 @@ if __name__ == "__main__":
         # "device": "cuda",
     }
     LABEL_HORIZON = 5
-    MODEL_SAVE_DIR = os.getenv("MODEL_SAVE_DIR") / 'xgb5d_20260310'
+    MODEL_SAVE_DIR = MODEL_SAVE_DIR / "xgb5d_20260310"
 
     model = BaselineRegModel(
         base_model_name=BASE_MODEL_NAME,
