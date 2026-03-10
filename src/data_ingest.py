@@ -1,4 +1,5 @@
 import os
+from dotenv import load_dotenv
 import pandas as pd
 import pyarrow.parquet as pq
 import warnings
@@ -7,6 +8,8 @@ from src.logger import setup_logger
 import logging
 
 logger = setup_logger(__name__, level=logging.DEBUG)
+# Load the .env
+load_dotenv()
 
 
 class RawDataLoader:

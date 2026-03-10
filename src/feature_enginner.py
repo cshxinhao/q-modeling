@@ -107,7 +107,6 @@ class FeatureDimensionReducer:
 
 
 class FeatureDeriver:
-
     def derive_rolling(
         df: pd.DataFrame, feature: str, window_size: int, calc_func: str
     ):

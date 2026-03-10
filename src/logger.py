@@ -4,7 +4,7 @@ from pathlib import Path
 
 
 def setup_logger(
-    name: str = "q-data-pipeline",
+    name: str = "q-modeling",
     log_file: str = "app.log",
     level: int = logging.INFO,
 ) -> logging.Logger:

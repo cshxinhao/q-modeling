@@ -3,7 +3,7 @@
 # In most cases, the model is retrained every N weeks, and the trained model is persisted
 
 import pandas as pd
-from src.pipeline import simple_pipeline
+from src.interface import ModelInterface
 
 
 def simple_window_scheduler(
@@ -12,7 +12,7 @@ def simple_window_scheduler(
     retrain_month: int,
     window_type: str,
     window_size: int,  # in months
-    pipeline: callable,
+    model: ModelInterface,
 ):
     """
     if window_type = rolling, window_size is the rolling window size
@@ -29,7 +29,9 @@ def simple_window_scheduler(
     predict_end = predict_start + pd.offsets.MonthEnd(retrain_month)
 
     while predict_end.year <= end_year:
-        pipeline(train_start, train_end, predict_start, predict_end)
+        model.refresh(train_start, train_end, predict_start, predict_end)
+        model.train()
+        model.predict()
 
         # Update the training period
         if window_type == "rolling":

@@ -1,3 +1,4 @@
+dotenv  # For loading environment variables
 pyarrow
 pandas
 numpy
