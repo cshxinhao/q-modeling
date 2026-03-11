@@ -167,11 +167,20 @@ class BaselineRegModel(ModelInterface):
         model = self.ModelClass(**self.model_params)
         return model
 
-    def train(self):
+    def train(self, replace: bool = False):
 
         logger.info(
             f"{self.model_id}: Training model for {self.train_start.strftime('%Y%m%d')} to {self.train_end.strftime('%Y%m%d')}"
         )
+
+        if (
+            self.model_files[0].exists()
+            and self.model_files[1].exists()
+            and not replace
+        ):
+            logger.info(f"{self.model_id}: Already trained, skip training ...")
+            self.fitted = True
+            return self
 
         X = self._get_X(start=self.train_start, end=self.train_end)
         idx, cols = X.index, X.columns
@@ -201,11 +210,16 @@ class BaselineRegModel(ModelInterface):
 
         return self
 
-    def predict(self):
+    def predict(self, replace: bool = False):
 
         logger.info(
             f"{self.model_id}: Predicting for {self.test_start.strftime('%Y%m%d')} to {self.test_end.strftime('%Y%m%d')}"
         )
+
+        if self.model_files[2].exists() and not replace:
+            logger.info(f"{self.model_id}: Predicted already, skip ...")
+            y_pred = pd.read_parquet(self.model_files[2])
+            return y_pred
 
         if not self.fitted:
             raise ValueError("Model not fitted. Please train the model first.")
@@ -220,8 +234,8 @@ class BaselineRegModel(ModelInterface):
 
         # Save the predictions
         pred_path = self.model_files[2]
-        y_pred = pd.DataFrame(y_pred, index=idx, columns=["pred"])
-        y_pred.to_parquet(pred_path)
+        y_pred = pd.DataFrame(y_pred, index=idx, columns=["pred"]).reset_index()
+        y_pred.to_parquet(pred_path, index=False)
 
         return y_pred
 

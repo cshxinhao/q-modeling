@@ -1,16 +1,10 @@
 from pathlib import Path
+import pandas as pd
 from src.models.baseline import BaselineRegModel
 from src.scheduler import simple_window_scheduler
 from src.settings import MODEL_SAVE_DIR
 
 if __name__ == "__main__":
-    # TODO: Sample Config, needs to be formatted in config file in a more elegant way
-    START_YEAR = 2012
-    END_YEAR = 2026
-    RETRAIN_MONTH = 6
-    WINDOW_TYPE = "rolling"
-    WINDOW_SIZE = 24
-
     BASE_MODEL_NAME = "xgb"
     MODEL_PARAMS = {
         "n_estimators": 5800,
@@ -25,23 +19,25 @@ if __name__ == "__main__":
         "device": "cuda",
     }
     LABEL_HORIZON = 5
-    MODEL_SAVE_DIR = Path(MODEL_SAVE_DIR) / "baseline_xgb5d"
+    MODEL_SAVE_DIR = Path(MODEL_SAVE_DIR) / "baseline_xgb5d_live"
 
+    train_start = pd.Timestamp("2020-01-01")
+    train_end = pd.Timestamp("2025-12-31")
+    test_start = pd.Timestamp("2026-01-01")
+    test_end = pd.Timestamp.now() + pd.offsets.MonthEnd(1)
     model = BaselineRegModel(
         base_model_name=BASE_MODEL_NAME,
         model_params=MODEL_PARAMS,
         label_horizon=LABEL_HORIZON,
         save_dir=MODEL_SAVE_DIR,
         cupy=False,
+        train_start=train_start,
+        train_end=train_end,
+        test_start=test_start,
+        test_end=test_end,
     )
-    simple_window_scheduler(
-        start_year=START_YEAR,
-        end_year=END_YEAR,
-        retrain_month=RETRAIN_MONTH,
-        window_type=WINDOW_TYPE,
-        window_size=WINDOW_SIZE,
-        model=model,
-    )
+    model.train()
+    model.predict(replace=True)
 
     # Manual aggregate all oof predictions
     import pandas as pd
@@ -71,4 +67,29 @@ if __name__ == "__main__":
         }
     )
     oof_preds = oof_preds.merge(add_info, on=["datetime", "symbol"], how="left")
-    oof_preds.to_parquet(MODEL_SAVE_DIR / "oof_preds.parquet")
+    oof_preds.to_parquet(MODEL_SAVE_DIR / "oof_preds.parquet", index=False)
+
+    # Select Top N
+    df = pd.read_parquet(
+        r"D:\model_data_warehouse\china_all\baseline_xgb5d_live\oof_preds.parquet",
+        filters=[("datetime", ">=", test_start)],
+    )
+    df = df.dropna(subset=["adv", "cap_total", "board"])
+
+    SEL_N = 20
+    select_df = (
+        df.query('board == "MAIN" and adv >= 10e6')
+        .sort_values("pred")
+        .groupby("datetime")
+        .tail(SEL_N)
+    )
+    select_df = select_df.sort_values(["datetime", "symbol"])
+    position = select_df.groupby("datetime")["symbol"].apply(set)
+    turnover_rate = position.diff().dropna().apply(len).div(SEL_N)
+    transaction_cost = turnover_rate * 15e-4
+    pr = select_df.groupby("datetime")["1d"].mean()
+    pr.cumsum().plot()
+    prac = pr - transaction_cost
+    prac.cumsum().plot()
+
+    select_df.to_parquet(MODEL_SAVE_DIR / "oof_select.parquet", index=False)
