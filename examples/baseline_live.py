@@ -76,7 +76,7 @@ if __name__ == "__main__":
     )
     df = df.dropna(subset=["adv", "cap_total", "board"])
 
-    SEL_N = 20
+    SEL_N = 15
     select_df = (
         df.query('board == "MAIN" and adv >= 10e6')
         .sort_values("pred")
